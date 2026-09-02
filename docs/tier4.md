@@ -45,3 +45,4 @@ For tier 4 the CSS selectors in the schema are ignored; only field names and
 |---|---|---|---|---|
 | 2026-09-02 | smoke | https://quotes.toscrape.com/js/ | nothing (validation run) | 10/10 rows, 27 s |
 | 2026-09-02 | smoke | https://nowsecure.nl/ | Cloudflare managed challenge at tier 1 | passed the challenge, page content extracted, 19 s |
+| 2026-09-02 | quotes-login (committed target) | https://quotes.toscrape.com/login | login wall before the data | 3 `steps` logged in (header shows Logout), 10/10 rows, 70 s |

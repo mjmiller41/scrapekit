@@ -160,7 +160,7 @@ def tier4_stagehand(url: str, schema: dict, instruction: str = "", steps: list[s
     try:
         import stagehand  # noqa: F401
     except ImportError:
-        page.error = "stagehand is not installed; run: uv tool install --editable '.[tier4]' in the scrapekit checkout"
+        page.error = "tier 4 runs on the laptop only (stagehand extra not installed here); run: uv tool install --editable '.[tier4]' in the scrapekit checkout"
         return page
     if not steel_ok(cfg.steel_url):
         page.error = f"Steel is not answering at {cfg.steel_url}; run scripts/steel-up.sh"

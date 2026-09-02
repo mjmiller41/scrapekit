@@ -151,7 +151,7 @@ def cmd_extract(a) -> int:
     rows = page.rows or []
     rates = fill_rates(rows, schema)
     if not a.target:
-        remember_oneoff(a.url, page.tier, schema, rates)
+        remember_oneoff(a.url, page.tier, schema, rates, steps=steps, instruction=instruction)
     print(json.dumps(rows[: a.limit], indent=2, ensure_ascii=False))
     print(f"# tier {page.tier} | {len(rows)} rows | fill: " + ", ".join(f"{k}={v:.0%}" for k, v in rates.items()), file=sys.stderr)
     weakest = weakest_field(rates)
@@ -174,7 +174,8 @@ def cmd_save_target(a) -> int:
         raise ValueError("tier 3 targets need --note explaining why a CSS schema was not enough")
     if last["tier"] == 4 and not a.note:
         raise ValueError("tier 4 targets need --note naming what defeated tiers 1-3")
-    path = save_target(a.name, last["url"], last["tier"], last["schema"], key=a.key, note=a.note)
+    path = save_target(a.name, last["url"], last["tier"], last["schema"], key=a.key, note=a.note,
+                       steps=last.get("steps"), instruction=last.get("instruction", ""))
     print(f"wrote {path} (tier {last['tier']}, {len(last['schema']['fields'])} fields, last fill {last['fill_rates']})")
     print("edit urls/url_template and delay before `sk remote run`.")
     return 0

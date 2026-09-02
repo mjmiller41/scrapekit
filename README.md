@@ -6,7 +6,7 @@ Tiered, target-driven scraping. Cheapest tier first; move up only when a page fo
 |---|---|---|
 | 1 | httpx + selectolax, CSS schema | Default. Server-rendered HTML. Milliseconds. |
 | 2 | Crawl4AI headless Chromium, same CSS schema | Probe says JS shell, or tier 1 fields come back empty. |
-| 3 | Crawl4AI LLM extraction on local Ollama (`qwen3:4b`) | DOM cannot be described with CSS. VPS only. Slow. |
+| 3 | Crawl4AI LLM extraction, model set by `llm_provider` (default local Ollama `qwen3:4b`) | DOM cannot be described with CSS. Slow on CPU; see below. |
 | 4 | Steel + Stagehand | Not installed. See `docs/tier4.md`. |
 
 Licenses in the stack: httpx BSD, selectolax MIT, Crawl4AI Apache 2.0, Playwright Apache 2.0.
@@ -64,6 +64,15 @@ the Ollama endpoint: `~/.config/scrapekit/config.yaml`.
 
 On the VPS `low_priority: true` makes every run renice itself and use idle I/O, one run at
 a time (file lock), one browser, tier 3 serial. Target values above the caps are clamped.
+
+## Tier 3 reality check (measured 2026-09-02)
+
+On the VPS (2 vCPU, no GPU) `qwen3:4b` runs at about 28 tokens/s in and 14 tokens/s out.
+One 10-item page did not finish inside 5 minutes and pinned both cores, which is the
+fleadays production box. Tier 3 with the local model is therefore not usable there as is.
+Set `llm_provider` in `~/.config/scrapekit/config.yaml` to a hosted model, for example
+`anthropic/claude-haiku-4-5-20251001` with `llm_api_token: env:ANTHROPIC_API_KEY`, and tier 3
+runs in seconds. Tiers 1 and 2 are unaffected.
 
 ## Tests
 

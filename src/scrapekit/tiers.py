@@ -144,13 +144,18 @@ async def tier3_llm_async(url: str, schema: dict, instruction: str = "", cfg: Co
     }
     field_hints = "; ".join(f"{f['name']}: {f.get('description') or f.get('selector') or ''}".rstrip(": ") for f in schema.get("fields", []))
     strategy = LLMExtractionStrategy(
-        llm_config=LLMConfig(provider=f"ollama/{cfg.ollama_model}", api_token=None, base_url=cfg.ollama_url),
+        llm_config=LLMConfig(
+            provider=cfg.llm_provider,
+            api_token=cfg.llm_api_token or None,
+            base_url=cfg.llm_base_url if cfg.llm_provider.startswith("ollama/") else None,
+        ),
         schema=json_schema,
         extraction_type="schema",
-        instruction=(instruction or "Extract every item on the page.") + f" Fields: {field_hints}. Return one object per item.",
+        # "/no_think" is Qwen3's soft switch; without it the model reasons at length on CPU.
+        instruction=(instruction or "Extract every item on the page.") + f" Fields: {field_hints}. Return one object per item. /no_think",
         input_format="markdown",
-        extra_args={"temperature": 0},
-        chunk_token_threshold=3000,
+        extra_args={"temperature": 0, "max_tokens": 4000},
+        chunk_token_threshold=2000,
         verbose=False,
     )
     run_cfg = CrawlerRunConfig(

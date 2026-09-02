@@ -237,7 +237,7 @@ def cmd_where(a) -> int:
     print(f"targets:  {targets_dir()}")
     print(f"remote:   {cfg.remote_host}:{cfg.remote_repo}")
     print(f"caps:     concurrency<={cfg.max_concurrency} browsers<={cfg.max_browsers} low_priority={cfg.low_priority}")
-    print(f"ollama:   {cfg.ollama_url} {cfg.ollama_model}")
+    print(f"tier 3:   {cfg.llm_provider}" + (f" at {cfg.llm_base_url}" if cfg.llm_provider.startswith("ollama/") else ""))
     return 0
 
 

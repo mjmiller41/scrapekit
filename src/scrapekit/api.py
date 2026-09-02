@@ -39,6 +39,8 @@ def extract(url: str, schema: dict, tier: int | None = None, instruction: str = 
     if tier is None:
         p = _probe(url)
         tier = p.recommended_tier if isinstance(p.recommended_tier, int) else 2
+    if tier >= 2:
+        _lower_priority(cfg)
     return fetch_at_tier(url, tier, schema=schema, instruction=instruction, wait_for=wait_for, cfg=cfg)
 
 

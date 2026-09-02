@@ -1,0 +1,16 @@
+# Smoke target: same demo site rendered client-side. Proves tier 2 end to end.
+name: quotes-js
+tier: 2
+urls:
+  - https://quotes.toscrape.com/js/
+  - https://quotes.toscrape.com/js/page/2/
+delay_seconds: 1
+concurrency: 1
+wait_for: "css:div.quote"
+schema:
+  baseSelector: "div.quote"
+  fields:
+    - {name: text, selector: ".text", type: text}
+    - {name: author, selector: ".author", type: text}
+    - {name: tags, selector: ".tags", type: text}
+key: text

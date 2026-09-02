@@ -1,0 +1,24 @@
+name: quotes-login
+tier: 4
+urls:
+- https://quotes.toscrape.com/login
+delay_seconds: 2
+concurrency: 2
+schema:
+  name: quotes-login
+  baseSelector: body
+  fields:
+  - name: text
+    type: text
+  - name: author
+    type: text
+  - name: top_right_link_text
+    type: text
+key: text
+llm_instruction: Extract every quote with its author, and the text of the link in
+  the top right of the header (it says Login or Logout).
+tier4_reason: 'demo login wall: quotes need a login before they show (validation target)'
+steps:
+- type admin into the Username field
+- type admin into the Password field
+- click the Login button

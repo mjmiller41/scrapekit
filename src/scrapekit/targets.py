@@ -84,7 +84,7 @@ def list_targets() -> list[str]:
     return sorted(p.stem for p in d.glob("*.yaml") if not p.stem.startswith("_"))
 
 
-def save_target(name: str, url: str, tier: int, schema: dict, key: str | None = None, note: str = "") -> Path:
+def save_target(name: str, url: str, tier: int, schema: dict, key: str | None = None, note: str = "", steps: list[str] | None = None, instruction: str = "") -> Path:
     d = targets_dir()
     d.mkdir(parents=True, exist_ok=True)
     path = target_path(name)
@@ -100,11 +100,13 @@ def save_target(name: str, url: str, tier: int, schema: dict, key: str | None = 
     }
     if key:
         body["key"] = key
-    if tier == 3:
+    if tier in (3, 4) and instruction:
+        body["llm_instruction"] = instruction
+    if tier == 3 and not instruction:
         body["llm_instruction"] = note or "TODO: say what to extract and why a CSS schema could not"
     if tier == 4:
         body["tier4_reason"] = note or "TODO: name what defeated tiers 1-3"
-        body["steps"] = []
+        body["steps"] = list(steps or [])
     header = f"# {note}\n" if note and tier not in (3, 4) else ""
     path.write_text(header + yaml.safe_dump(body, sort_keys=False, allow_unicode=True))
     return path

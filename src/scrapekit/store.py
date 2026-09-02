@@ -186,9 +186,10 @@ def _oneoff_file() -> Path:
     return config.DATA_DIR / "last_oneoff.json"
 
 
-def remember_oneoff(url: str, tier: int, schema: dict, rates: dict) -> None:
+def remember_oneoff(url: str, tier: int, schema: dict, rates: dict, steps: list[str] | None = None, instruction: str = "") -> None:
     ensure_data_dir()
-    _oneoff_file().write_text(json.dumps({"url": url, "tier": tier, "schema": schema, "fill_rates": rates, "at": now_iso()}, indent=2))
+    _oneoff_file().write_text(json.dumps({"url": url, "tier": tier, "schema": schema, "fill_rates": rates,
+                                          "steps": steps or [], "instruction": instruction, "at": now_iso()}, indent=2))
 
 
 def recall_oneoff() -> dict | None:

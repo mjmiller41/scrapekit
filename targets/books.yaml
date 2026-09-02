@@ -1,0 +1,15 @@
+# Smoke target: static demo shop. Proves tier 1 end to end.
+name: books
+tier: 1
+url_template: https://books.toscrape.com/catalogue/page-{page}.html
+page_range: [1, 2]
+delay_seconds: 1
+concurrency: 2
+schema:
+  baseSelector: "article.product_pod"
+  fields:
+    - {name: title, selector: "h3 a", type: attribute, attribute: title}
+    - {name: price, selector: ".price_color", type: text}
+    - {name: url, selector: "h3 a", type: attribute, attribute: href}
+    - {name: stock, selector: ".availability", type: text}
+key: url

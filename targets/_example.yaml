@@ -1,0 +1,22 @@
+# Template. Files starting with "_" are ignored by `sk targets`.
+# One file per repeated scrape. The schema is Crawl4AI's JsonCss format; the same schema
+# drives tier 1 (no browser) and tier 2 (headless Chromium), so moving up is a one-line edit.
+name: example-listings
+tier: 1                       # 1 httpx | 2 Crawl4AI browser | 3 Crawl4AI + local LLM (needs llm_instruction)
+urls:
+  - https://example.com/listings?page=1
+# or generate pages:
+# url_template: https://example.com/listings?page={page}
+# page_range: [1, 5]
+delay_seconds: 2              # politeness between requests
+concurrency: 2                # clamped by max_concurrency in ~/.config/scrapekit/config.yaml
+# wait_for: "css:div.listing"  # tier 2 only: wait for this before extracting
+schema:
+  baseSelector: "div.listing"
+  fields:
+    - {name: title, selector: "h2", type: text}
+    - {name: price, selector: ".price", type: text}
+    - {name: url, selector: "a", type: attribute, attribute: href}
+    # - {name: sku, selector: ".meta", type: regex, pattern: "SKU-\\d+"}
+key: url                      # dedupe/upsert field; omit to key on the whole row
+# llm_instruction: ""         # tier 3 only: what to extract and why CSS was not enough

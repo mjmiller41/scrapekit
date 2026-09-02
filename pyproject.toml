@@ -18,6 +18,11 @@ dependencies = [
 [project.scripts]
 sk = "scrapekit.cli:main"
 
+[project.optional-dependencies]
+tier4 = [
+    "stagehand>=4",
+]
+
 [build-system]
 requires = ["uv_build>=0.12.6,<0.13.0"]
 build-backend = "uv_build"

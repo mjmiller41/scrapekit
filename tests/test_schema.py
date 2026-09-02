@@ -49,9 +49,16 @@ def test_parse_fields_spec_handles_attrs_and_commas_in_selectors():
     validate_schema(s)
 
 
+def test_parse_fields_spec_bare_names_for_llm_tiers():
+    assert parse_fields_spec("text, author")["fields"] == [{"name": "text", "type": "text"}, {"name": "author", "type": "text"}]
+    s = parse_fields_spec("title=,price=, url=a@href")
+    assert s["fields"] == [{"name": "title", "type": "text"}, {"name": "price", "type": "text"},
+                           {"name": "url", "selector": "a", "type": "attribute", "attribute": "href"}]
+
+
 def test_parse_fields_spec_rejects_garbage():
     with pytest.raises(ValueError):
-        parse_fields_spec("justaname")
+        parse_fields_spec("bad name=h1")
 
 
 def test_validate_schema_requires_attribute():

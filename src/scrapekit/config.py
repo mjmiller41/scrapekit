@@ -40,6 +40,9 @@ class Config:
     remote_repo: str = "~/Code/scrapekit"
     remote_data: str = "~/.local/share/scrapekit"
     timeout_seconds: float = 30.0
+    # Tier 4: Steel container + Stagehand, model via claude -p. Laptop only; see docs/tier4.md.
+    steel_url: str = "http://localhost:3000"
+    tier4_model: str = "haiku"
     extra: dict = field(default_factory=dict)
 
 

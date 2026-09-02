@@ -33,7 +33,7 @@ def fetch(url: str, tier: int | None = None, cfg: Config | None = None) -> Page:
     return page
 
 
-def extract(url: str, schema: dict, tier: int | None = None, instruction: str = "", wait_for: str | None = None, cfg: Config | None = None) -> Page:
+def extract(url: str, schema: dict, tier: int | None = None, instruction: str = "", wait_for: str | None = None, cfg: Config | None = None, steps: list[str] | None = None) -> Page:
     """Apply a schema to one URL. Page.rows holds the result."""
     cfg = cfg or load_config()
     if tier is None:
@@ -41,7 +41,7 @@ def extract(url: str, schema: dict, tier: int | None = None, instruction: str = 
         tier = p.recommended_tier if isinstance(p.recommended_tier, int) else 2
     if tier >= 2:
         _lower_priority(cfg)
-    return fetch_at_tier(url, tier, schema=schema, instruction=instruction, wait_for=wait_for, cfg=cfg)
+    return fetch_at_tier(url, tier, schema=schema, instruction=instruction, wait_for=wait_for, cfg=cfg, steps=steps)
 
 
 def run(target_name: str, dry_run: bool = False, no_wait: bool = False, cfg: Config | None = None) -> RunSummary:
@@ -73,8 +73,8 @@ def _run_target(target: Target, cfg: Config, dry_run: bool) -> RunSummary:
     elif target.tier == 2:
         pages = asyncio.run(_tier2_many(urls, target, cfg))
     else:
-        pages = [fetch_at_tier(u, 3, schema=target.schema, instruction=target.llm_instruction, cfg=cfg) for u in urls]
-        # tier 3 is always serial: one local model, two cores.
+        # tiers 3 and 4 are always serial: one model call chain at a time.
+        pages = [fetch_at_tier(u, target.tier, schema=target.schema, instruction=target.llm_instruction, cfg=cfg, steps=target.steps) for u in urls]
 
     rows: list[dict] = []
     for page in pages:

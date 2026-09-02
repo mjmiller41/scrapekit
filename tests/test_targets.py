@@ -23,7 +23,9 @@ def test_url_template_expands():
 
 
 @pytest.mark.parametrize("bad, msg", [
-    ({"tier": 4, "schema": SCHEMA, "urls": ["u"]}, "tier"),
+    ({"tier": 5, "schema": SCHEMA, "urls": ["u"]}, "tier"),
+    ({"tier": 4, "schema": SCHEMA, "urls": ["u"]}, "tier4_reason"),
+    ({"tier": 1, "schema": SCHEMA, "urls": ["u"], "steps": ["x"]}, "steps"),
     ({"tier": 1, "schema": SCHEMA}, "no urls"),
     ({"tier": 1, "schema": SCHEMA, "urls": ["u"], "key": "zzz"}, "not a schema field"),
     ({"tier": 3, "schema": SCHEMA, "urls": ["u"]}, "llm_instruction"),

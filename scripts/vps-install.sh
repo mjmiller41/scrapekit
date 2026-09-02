@@ -56,19 +56,16 @@ max_concurrency: 2
 max_browsers: 1
 tier3_serial: true
 low_priority: true      # sk run renices itself to 15 and ionice idle
-# Tier 3 model. Local qwen3:4b measured at ~28 tok/s in, ~14 tok/s out on this box:
-# one small page did not finish in 5 minutes and pegged both cores. Point this at a hosted
-# model (e.g. anthropic/claude-haiku-4-5-20251001 with llm_api_token: env:ANTHROPIC_API_KEY)
-# before relying on tier 3 here.
-llm_provider: ollama/qwen3:4b
-llm_base_url: http://localhost:11434
-llm_api_token: ""
+# Tier 3 model. claude/<model> = headless Claude Code on the subscription: seconds, no CPU.
+# ollama/qwen3:4b is available but measured ~28 tok/s in, ~14 out here; one small page did
+# not finish in 5 minutes and pegged both cores. Do not use it on this box.
+llm_provider: claude/haiku
 timeout_seconds: 30
 EOF
 fi
 
-echo "== ollama"
-curl -sf localhost:11434/api/tags | grep -q qwen3 && echo "qwen3 present" || echo "!! qwen3:4b missing: ollama pull qwen3:4b"
+echo "== claude (tier 3)"
+command -v claude >/dev/null && claude --version || echo "!! claude CLI missing: tier 3 needs Claude Code installed and logged in"
 
 echo "== smoke"
 sk probe https://books.toscrape.com/ | grep -E '^tier'

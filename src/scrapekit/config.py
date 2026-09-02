@@ -30,10 +30,12 @@ class Config:
     max_browsers: int = 1
     tier3_serial: bool = True
     low_priority: bool = False
-    # Tier 3 model, in Crawl4AI/LiteLLM form: "ollama/qwen3:4b", "anthropic/claude-haiku-4-5-20251001", ...
-    llm_provider: str = "ollama/qwen3:4b"
+    # Tier 3 model. "claude/<model>" runs `claude -p` on the Claude Code subscription (no key,
+    # no local CPU). Anything else is a Crawl4AI/LiteLLM provider: "ollama/qwen3:4b",
+    # "anthropic/claude-haiku-4-5-20251001", ...
+    llm_provider: str = "claude/haiku"
     llm_base_url: str = "http://localhost:11434"   # only used for ollama/* providers
-    llm_api_token: str = ""                        # "env:ANTHROPIC_API_KEY" style, or empty for local
+    llm_api_token: str = ""                        # "env:ANTHROPIC_API_KEY" style; unused for claude/ and ollama/
     remote_host: str = "hostinger-vps"
     remote_repo: str = "~/Code/scrapekit"
     remote_data: str = "~/.local/share/scrapekit"

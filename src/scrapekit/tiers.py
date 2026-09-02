@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
+import subprocess
 from dataclasses import dataclass, field
 
 import httpx
@@ -128,7 +130,85 @@ def _page_from_result(page: Page, result, schema: dict | None) -> Page:
 # ---------------------------------------------------------------- tier 3
 
 def tier3_llm(url: str, schema: dict, instruction: str = "", cfg: Config | None = None) -> Page:
+    cfg = cfg or load_config()
+    if cfg.llm_provider.startswith("claude/"):
+        return tier3_claude(url, schema, instruction=instruction, cfg=cfg)
     return asyncio.run(tier3_llm_async(url, schema, instruction=instruction, cfg=cfg))
+
+
+# ---- claude/<model>: headless Claude Code on the subscription, no API key, no local CPU.
+
+MAX_MARKDOWN_CHARS = 60_000
+
+
+def tier3_claude(url: str, schema: dict, instruction: str = "", cfg: Config | None = None) -> Page:
+    """Markdown from the cheapest tier that yields real text, then one `claude -p` call."""
+    cfg = cfg or load_config()
+    source = tier1_fetch(url, cfg=cfg)
+    if source.ok:
+        source.markdown = html_to_markdown(source.html, source.final_url or url)
+    if not source.ok or len(source.markdown.strip()) < 200:
+        source = tier2_render(url, cfg=cfg)
+    page = Page(url=url, tier=3, status=source.status, final_url=source.final_url, html=source.html, markdown=source.markdown)
+    if not source.ok:
+        page.error = source.error or f"status {source.status}"
+        return page
+    names = [f["name"] for f in schema.get("fields", [])]
+    prompt = build_claude_prompt(source.markdown[:MAX_MARKDOWN_CHARS], schema, instruction)
+    model = cfg.llm_provider.split("/", 1)[1] or "haiku"
+    try:
+        proc = subprocess.run(
+            ["claude", "-p", "--model", model, "--output-format", "json", "--max-turns", "1", prompt],
+            capture_output=True, text=True, timeout=cfg.timeout_seconds * 4,
+        )
+    except FileNotFoundError:
+        page.error = "claude CLI not found on PATH; install Claude Code or set llm_provider to ollama/..."
+        return page
+    except subprocess.TimeoutExpired:
+        page.error = f"claude -p timed out after {cfg.timeout_seconds * 4:.0f}s"
+        return page
+    if proc.returncode != 0:
+        page.error = f"claude -p exited {proc.returncode}: {(proc.stderr or proc.stdout).strip()[:300]}"
+        return page
+    try:
+        envelope = json.loads(proc.stdout)
+        text = envelope.get("result", "") if isinstance(envelope, dict) else ""
+    except json.JSONDecodeError:
+        text = proc.stdout
+    rows = parse_json_array(text)
+    page.rows = [{k: r.get(k) for k in names} for r in rows if isinstance(r, dict)]
+    return page
+
+
+def build_claude_prompt(markdown: str, schema: dict, instruction: str = "") -> str:
+    fields = "\n".join(
+        f"- {f['name']}" + (f": {f['description']}" if f.get("description") else "")
+        for f in schema.get("fields", [])
+    )
+    task = instruction or "Extract every item on the page."
+    return (
+        f"{task}\n\nReturn ONLY a JSON array of objects, one per item, with exactly these keys "
+        f"(use null when a value is absent):\n{fields}\n\nNo prose, no code fence, no tools. "
+        f"Page content follows.\n\n<page>\n{markdown}\n</page>"
+    )
+
+
+def parse_json_array(text: str) -> list:
+    """Find the JSON array in a model reply, tolerating a code fence or leading prose."""
+    text = text.strip()
+    fence = re.search(r"```(?:json)?\s*(\[.*?\])\s*```", text, re.S)
+    if fence:
+        text = fence.group(1)
+    else:
+        start, end = text.find("["), text.rfind("]")
+        if start == -1 or end == -1 or end < start:
+            return []
+        text = text[start : end + 1]
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return []
+    return data if isinstance(data, list) else []
 
 
 async def tier3_llm_async(url: str, schema: dict, instruction: str = "", cfg: Config | None = None) -> Page:

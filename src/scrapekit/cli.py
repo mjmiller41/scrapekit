@@ -53,8 +53,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--fields", help='inline schema: "title=h2,price=.price,url=a@href"')
     s.add_argument("--base", help="base selector for --fields (default: body, one row)")
     s.add_argument("--schema", help="YAML/JSON file with a JsonCss schema")
-    s.add_argument("--tier", type=int, choices=(1, 2, 3))
-    s.add_argument("--instruction", default="", help="tier 3 only: what to extract")
+    s.add_argument("--tier", type=int, choices=(1, 2, 3, 4))
+    s.add_argument("--instruction", default="", help="tiers 3-4: what to extract")
+    s.add_argument("--step", action="append", default=[], help="tier 4: natural-language action before extracting (repeatable)")
     s.add_argument("--dry-run", action="store_true", help="(target mode) never writes; same as default here")
     s.add_argument("--limit", type=int, default=20, help="rows to print")
     s.set_defaults(func=cmd_extract)
@@ -128,10 +129,12 @@ def cmd_extract(a) -> int:
     instruction = a.instruction
     wait_for = None
     tier = a.tier
+    steps = list(a.step)
     if a.target:
         t = load_target(a.target)
         schema, instruction, wait_for = t.schema, instruction or t.llm_instruction, t.wait_for
         tier = tier or t.tier
+        steps = steps or t.steps
     elif a.fields:
         schema = parse_fields_spec(a.fields, a.base)
     elif a.schema:
@@ -141,7 +144,7 @@ def cmd_extract(a) -> int:
         print("error: give --target, --fields, or --schema", file=sys.stderr)
         return 2
     validate_schema(schema)
-    page = api.extract(a.url, schema, tier=tier, instruction=instruction, wait_for=wait_for)
+    page = api.extract(a.url, schema, tier=tier, instruction=instruction, wait_for=wait_for, steps=steps)
     if page.error or not page.ok:
         print(f"error: tier {page.tier} extract failed: {page.error or f'status {page.status}'}", file=sys.stderr)
         return 1
@@ -154,6 +157,8 @@ def cmd_extract(a) -> int:
     weakest = weakest_field(rates)
     if not rows:
         print("# no rows: baseSelector matched nothing. Check `sk fetch --html` for the real markup, or raise the tier by one.", file=sys.stderr)
+        if page.tier == 4:
+            print("# tier 4 returned nothing: add --step actions (dismiss a banner, log in, scroll) or sharpen --instruction.", file=sys.stderr)
         return 3
     if weakest and weakest[1] < FILL_THRESHOLD:
         print(f"# weak field {weakest[0]!r} at {weakest[1]:.0%}: fix its selector, or raise the tier by exactly one.", file=sys.stderr)
@@ -167,6 +172,8 @@ def cmd_save_target(a) -> int:
         raise RuntimeError("no one-off extract recorded yet; run `sk extract URL --fields ...` first")
     if last["tier"] == 3 and not a.note:
         raise ValueError("tier 3 targets need --note explaining why a CSS schema was not enough")
+    if last["tier"] == 4 and not a.note:
+        raise ValueError("tier 4 targets need --note naming what defeated tiers 1-3")
     path = save_target(a.name, last["url"], last["tier"], last["schema"], key=a.key, note=a.note)
     print(f"wrote {path} (tier {last['tier']}, {len(last['schema']['fields'])} fields, last fill {last['fill_rates']})")
     print("edit urls/url_template and delay before `sk remote run`.")
@@ -239,6 +246,8 @@ def cmd_where(a) -> int:
     print(f"caps:     concurrency<={cfg.max_concurrency} browsers<={cfg.max_browsers} low_priority={cfg.low_priority}")
     via = " via claude -p" if cfg.llm_provider.startswith("claude/") else (f" at {cfg.llm_base_url}" if cfg.llm_provider.startswith("ollama/") else "")
     print(f"tier 3:   {cfg.llm_provider}{via}")
+    from scrapekit.tier4 import steel_ok
+    print(f"tier 4:   steel {cfg.steel_url} ({'up' if steel_ok(cfg.steel_url) else 'down'}), model {cfg.tier4_model} via claude -p")
     return 0
 
 

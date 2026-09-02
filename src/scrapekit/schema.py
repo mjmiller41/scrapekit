@@ -86,25 +86,30 @@ def weakest_field(rates: dict[str, float]) -> tuple[str, float] | None:
 def parse_fields_spec(spec: str, base_selector: str | None = None) -> dict:
     """Turn `title=h2,price=.price,url=a@href` into a JsonCss schema.
 
-    Split on commas only when the comma is followed by `name=`, so selectors that contain
-    commas still work.
+    Two forms. A spec with no "=" at all is a plain list of field names ("text,author"),
+    which is what tiers 3 and 4 want (they extract by name, not by CSS). Otherwise every
+    field is `name=selector` (selector may be empty), split on commas only when the comma is
+    followed by `name=`, so selectors that contain commas still work.
     """
     fields = []
-    for part in re.split(r",(?=\s*[\w-]+=)", spec):
+    parts = spec.split(",") if "=" not in spec else re.split(r",(?=\s*[\w-]+=)", spec)
+    for part in parts:
         part = part.strip()
         if not part:
             continue
         name, _, selector = part.partition("=")
         name, selector = name.strip(), selector.strip()
-        if not name or not selector:
-            raise ValueError(f"bad field spec {part!r}; expected name=selector or name=selector@attr")
-        if "@" in selector:
+        if not name or not re.fullmatch(r"[\w-]+", name):
+            raise ValueError(f"bad field spec {part!r}; expected name, name=selector, or name=selector@attr")
+        if not selector:
+            fields.append({"name": name, "type": "text"})
+        elif "@" in selector:
             selector, attribute = selector.rsplit("@", 1)
             fields.append({"name": name, "selector": selector.strip() or None, "type": "attribute", "attribute": attribute})
         else:
             fields.append({"name": name, "selector": selector, "type": "text"})
     for f in fields:
-        if f.get("selector") is None:
+        if "selector" in f and f["selector"] is None:
             del f["selector"]
     return {"name": "oneoff", "baseSelector": base_selector or "body", "fields": fields}
 

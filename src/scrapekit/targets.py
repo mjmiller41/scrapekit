@@ -10,7 +10,7 @@ import yaml
 from scrapekit import config
 from scrapekit.schema import validate_schema
 
-VALID_TIERS = (1, 2, 3)
+VALID_TIERS = (1, 2, 3, 4)
 
 
 @dataclass
@@ -26,6 +26,8 @@ class Target:
     concurrency: int = 2
     wait_for: str | None = None
     llm_instruction: str = ""
+    steps: list[str] = field(default_factory=list)   # tier 4: natural-language actions before extracting
+    tier4_reason: str = ""                            # tier 4: what defeated tiers 1-3
     path: Path | None = None
 
     def all_urls(self) -> list[str]:
@@ -46,6 +48,10 @@ class Target:
             raise ValueError(f"{self.name}: key {self.key!r} is not a schema field")
         if self.tier == 3 and not self.llm_instruction:
             raise ValueError(f"{self.name}: tier 3 requires 'llm_instruction' explaining what to extract and why CSS was not enough")
+        if self.tier == 4 and not self.tier4_reason:
+            raise ValueError(f"{self.name}: tier 4 requires 'tier4_reason' naming what defeated tiers 1-3 (challenge page, login, ...)")
+        if self.steps and self.tier != 4:
+            raise ValueError(f"{self.name}: 'steps' only apply to tier 4")
 
 
 def targets_dir() -> Path:
@@ -96,6 +102,9 @@ def save_target(name: str, url: str, tier: int, schema: dict, key: str | None = 
         body["key"] = key
     if tier == 3:
         body["llm_instruction"] = note or "TODO: say what to extract and why a CSS schema could not"
-    header = f"# {note}\n" if note and tier != 3 else ""
+    if tier == 4:
+        body["tier4_reason"] = note or "TODO: name what defeated tiers 1-3"
+        body["steps"] = []
+    header = f"# {note}\n" if note and tier not in (3, 4) else ""
     path.write_text(header + yaml.safe_dump(body, sort_keys=False, allow_unicode=True))
     return path

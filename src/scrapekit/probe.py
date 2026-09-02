@@ -92,7 +92,7 @@ def analyse_html(p: Probe, html: str) -> Probe:
 
     if p.blocked:
         p.recommended_tier = "blocked"
-        p.reason = f"status {p.status} with challenge markers {p.markers or '[]'}; tiers 1-3 will not pass. Write the need into docs/tier4.md."
+        p.reason = f"status {p.status} with challenge markers {p.markers or '[]'}; tiers 1-3 will not pass. Tier 4 (Steel + Stagehand) is installed on the laptop: try `--tier 4` and record the target in docs/tier4.md."
     elif p.js_shell:
         p.recommended_tier = 2
         p.reason = f"JS shell: {p.text_chars} visible chars in {p.html_bytes} bytes" + (", empty app root" if empty_root else "")

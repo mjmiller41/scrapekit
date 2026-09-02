@@ -13,7 +13,7 @@ tiers only when a page forces it. Cheapest first, always.
 | 1 | httpx + CSS selectors | milliseconds, no browser |
 | 2 | Crawl4AI headless Chromium, same CSS schema | seconds |
 | 3 | headless Claude (`claude -p`, Haiku) over the page markdown | seconds, needs a written justification |
-| 4 | not installed | write the need to `docs/tier4.md` and stop |
+| 4 | Steel stealth browser + Stagehand agent, model via `claude -p` (laptop only) | ~30 s/page, needs `tier4_reason` |
 
 Run `sk where` once if you need the data or targets directory.
 
@@ -36,8 +36,9 @@ then continue at step 5.
 
 **1. Existing target?** `sk targets`. If the name is there: `sk remote run NAME`, report, stop.
 
-**2. Probe.** `sk probe URL`. Take the recommended tier. `blocked` means stop and log to
-`docs/tier4.md`.
+**2. Probe.** `sk probe URL`. Take the recommended tier. `blocked` is the only door to
+tier 4: `sk extract URL --tier 4 --fields "name=,price=" --instruction "..."`, optional
+`--step "close the cookie banner"` actions. Record the target in `docs/tier4.md`.
 
 **3. Look at the page.** `sk fetch URL --tier N` (markdown, capped at 200 lines) or
 `sk fetch URL --html --tier N` when you need the real selectors. Write a schema: a
@@ -68,7 +69,7 @@ Report: rows, new, changed, errors, and the JSONL path printed as `local copy`.
 
 - Never run a multi-page target from the laptop. `sk run` locally is for `--dry-run` only.
   The VPS has the clean IP and the resource caps.
-- One tier up at a time. Never jump to tier 3 because it "might work".
+- One tier up at a time. Never jump to tier 3 or 4 because it "might work".
 - Tier 3 needs `llm_instruction` in the YAML saying what to extract and why CSS failed.
 - Keep `delay_seconds` at 1 or higher on anything that is not a demo site.
 - Data lives in `~/.local/share/scrapekit/` (`scrapekit.db` + `NAME/DATE.jsonl`). Other

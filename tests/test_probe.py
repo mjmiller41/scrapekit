@@ -19,7 +19,7 @@ def test_cloudflare_challenge_is_blocked(fixture_html):
     assert p.blocked
     assert p.recommended_tier == "blocked"
     assert "cf-chl" in p.markers
-    assert "tier4" in p.reason
+    assert "tier4" in p.reason.lower() or "Tier 4" in p.reason
 
 
 def test_challenge_markers_with_200_and_real_content_are_not_blocked(fixture_html):

@@ -259,7 +259,7 @@ async def tier3_llm_async(url: str, schema: dict, instruction: str = "", cfg: Co
 
 # ---------------------------------------------------------------- dispatch
 
-def fetch_at_tier(url: str, tier: int, schema: dict | None = None, instruction: str = "", wait_for: str | None = None, cfg: Config | None = None) -> Page:
+def fetch_at_tier(url: str, tier: int, schema: dict | None = None, instruction: str = "", wait_for: str | None = None, cfg: Config | None = None, steps: list[str] | None = None) -> Page:
     if tier == 1:
         return tier1_fetch(url, schema=schema, cfg=cfg)
     if tier == 2:
@@ -268,4 +268,10 @@ def fetch_at_tier(url: str, tier: int, schema: dict | None = None, instruction: 
         if not schema:
             raise ValueError("tier 3 needs a schema (field names) to extract into")
         return tier3_llm(url, schema, instruction=instruction, cfg=cfg)
-    raise ValueError(f"tier {tier} is not installed; see docs/tier4.md")
+    if tier == 4:
+        if not schema:
+            raise ValueError("tier 4 needs a schema (field names) to extract into")
+        from scrapekit.tier4 import tier4_stagehand
+
+        return tier4_stagehand(url, schema, instruction=instruction, steps=steps, cfg=cfg)
+    raise ValueError(f"tier {tier} does not exist; tiers are 1-4")

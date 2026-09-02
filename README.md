@@ -7,7 +7,7 @@ Tiered, target-driven scraping. Cheapest tier first; move up only when a page fo
 | 1 | httpx + selectolax, CSS schema | Default. Server-rendered HTML. Milliseconds. |
 | 2 | Crawl4AI headless Chromium, same CSS schema | Probe says JS shell, or tier 1 fields come back empty. |
 | 3 | LLM extraction. Default `claude/haiku`: headless Claude Code (`claude -p`) on the subscription. Or any Crawl4AI/LiteLLM provider such as `ollama/qwen3:4b`. | DOM cannot be described with CSS. Seconds with Claude; minutes on CPU Ollama. |
-| 4 | Steel + Stagehand | Not installed. See `docs/tier4.md`. |
+| 4 | Steel stealth browser (Docker) driven by Stagehand, model via `claude -p` | Probe says `blocked`, or the data needs actions first. Laptop only. `docs/tier4.md`. |
 
 Licenses in the stack: httpx BSD, selectolax MIT, Crawl4AI Apache 2.0, Playwright Apache 2.0.
 
@@ -16,6 +16,7 @@ Licenses in the stack: httpx BSD, selectolax MIT, Crawl4AI Apache 2.0, Playwrigh
 ```bash
 uv tool install --editable .          # gives you `sk`
 uv run python -m playwright install chromium   # tier 2 (laptop already has it)
+uv tool install --editable '.[tier4]' && scripts/steel-up.sh   # tier 4, laptop only
 ```
 
 VPS: `ssh hostinger-vps 'bash -s' < scripts/vps-install.sh`. Idempotent. It also writes the
@@ -54,7 +55,8 @@ or read `~/.local/share/scrapekit/NAME/DATE.jsonl` and `scrapekit.db` (tables `i
 
 `sk extract` exits 3 when a field fills under 50% or the base selector matched nothing.
 Fix the selector first. If the markup is not in the HTML, raise `tier` by exactly one.
-Tier 3 needs `llm_instruction` in the YAML. Tier 4 is never chosen by an agent.
+Tier 3 needs `llm_instruction` in the YAML. Tier 4 needs `tier4_reason` and is reached only
+from a `blocked` probe or a page that needs `steps` before the data exists.
 
 ## Paths and caps
 

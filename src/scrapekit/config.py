@@ -30,8 +30,10 @@ class Config:
     max_browsers: int = 1
     tier3_serial: bool = True
     low_priority: bool = False
-    ollama_url: str = "http://localhost:11434"
-    ollama_model: str = "qwen3:4b"
+    # Tier 3 model, in Crawl4AI/LiteLLM form: "ollama/qwen3:4b", "anthropic/claude-haiku-4-5-20251001", ...
+    llm_provider: str = "ollama/qwen3:4b"
+    llm_base_url: str = "http://localhost:11434"   # only used for ollama/* providers
+    llm_api_token: str = ""                        # "env:ANTHROPIC_API_KEY" style, or empty for local
     remote_host: str = "hostinger-vps"
     remote_repo: str = "~/Code/scrapekit"
     remote_data: str = "~/.local/share/scrapekit"
